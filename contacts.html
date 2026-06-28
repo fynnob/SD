@@ -1469,7 +1469,7 @@
       yearbookAvatarImg.style.display = "none";
 
       if (profile.yearbookPhoto && profile.className) {
-        const ybBase = `Yearbook25-26/${profile.className}/${profile.yearbookPhoto}.png`;
+        const ybBase = `Yearbook25-26/${profile.className}/${profile.yearbookPhoto}`;
         loadEncryptedYearbookImage(ybBase).then(objectUrl => {
           if (objectUrl) {
             yearbookBlobUrl = objectUrl;
