@@ -1,0 +1,1715 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Profile</title>
+  <style>
+    :root {
+      --bg-1: #f3f8f0;
+      --bg-2: #cce2d9;
+      --panel: rgba(255, 255, 255, 0.88);
+      --line: #b8d2c8;
+      --text: #172a26;
+      --muted: #44605a;
+      --accent: #276f67;
+      --accent-soft: #e5f3f0;
+      --warn: #a24532;
+      --shadow: 0 18px 40px rgba(13, 40, 35, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 10%, rgba(39, 111, 103, 0.18), transparent 35%),
+        radial-gradient(circle at 90% 90%, rgba(162, 69, 50, 0.12), transparent 40%),
+        linear-gradient(145deg, var(--bg-1), var(--bg-2));
+      padding: 24px;
+    }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .backArrow {
+      display: inline-block;
+      text-decoration: none;
+      color: white;
+      background: linear-gradient(120deg, #276f67, #1f8f81);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+    }
+
+    .titleBar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      position: sticky;
+      top: 12px;
+      z-index: 20;
+    }
+
+    .backArrow {
+      position: relative;
+      top: -2px;
+      transition: opacity 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    .profileMeta {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      word-break: break-word;
+    }
+
+    .profile {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      animation: rise 450ms ease;
+    }
+
+    .header {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+      grid-template-columns: 1fr;
+      align-items: center;
+      background: linear-gradient(135deg, #edf8f5, #f9fdfc);
+      border-bottom: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 3px solid #c9e4dd;
+      object-fit: cover;
+      background: #f1fbf8;
+      cursor: pointer;
+    }
+
+    .avatarWrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap; /* Permits vertical wrapping on extra small devices */
+      row-gap: 14px;   /* Retains vertical gaps upon breaking lines */
+    }
+
+    .avatarMini {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #c9e4dd;
+      background: #f1fbf8;
+      cursor: pointer;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      line-height: 1.15;
+      font-size: clamp(1.5rem, 3vw, 2.4rem);
+      word-break: break-word;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      word-break: break-word;
+    }
+
+    .grid {
+      padding: 14px 24px 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .row {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #f9fffc;
+    }
+
+    .label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 5px;
+    }
+
+    .value {
+      font-size: 1rem;
+      word-break: break-word;
+    }
+
+    .jsonBlock {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #f7fbf9;
+    }
+
+    .jsonBlock summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .jsonBlock pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 10px 0 0;
+      font-size: 0.88rem;
+      color: #20342f;
+    }
+
+    .lockbox,
+    #lockbox {
+      display: none !important;
+    }
+
+    .error,
+    .loading {
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 14px;
+      font-size: 0.97rem;
+    }
+
+    .loading {
+      background: #eef8f5;
+      border: 1px solid #cde5dd;
+      color: #2b5a52;
+    }
+
+    .error {
+      background: #fff1ef;
+      border: 1px solid #e9c0b8;
+      color: var(--warn);
+      display: none;
+    }
+
+    .imageModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 18, 15, 0.78);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    }
+
+    .imageModal.open {
+      display: flex;
+    }
+
+    .imageModalCard {
+      max-width: min(96vw, 1200px);
+      max-height: 92vh;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 14px;
+      border: 1px solid #b8d2c8;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .imageModalBar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid #d9ebe3;
+      background: #f4fbf8;
+    }
+
+    .imageModalActions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .imageModalBtn {
+      border: 1px solid #a7c6bb;
+      background: #fff;
+      color: #1c4b44;
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .imageModalBody {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f221e;
+      min-height: 320px;
+    }
+
+    .imageModalBody img {
+      max-width: 100%;
+      max-height: calc(92vh - 56px);
+      object-fit: contain;
+    }
+
+    .familyList {
+      display: grid;
+      gap: 10px;
+    }
+
+    .familyCard {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 10px;
+      align-items: center;
+      text-decoration: none;
+      color: inherit;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #ffffff;
+    }
+
+    .familyAvatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #d8e8cb;
+      background: #edf7e5;
+    }
+
+    .familyName {
+      margin: 0;
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: #1f2b1b;
+      word-break: break-word;
+    }
+
+    .familyMeta {
+      margin: 3px 0 0;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .searchRow {
+      display: grid;
+      gap: 10px;
+    }
+
+    .searchActions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .primaryBtn {
+      border: 1px solid #1f8f81;
+      background: linear-gradient(120deg, #276f67, #1f8f81);
+      color: white;
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .searchHint {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .searchResults {
+      display: grid;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .quickGlance {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .quickSummary {
+      margin: 0;
+      font-size: 0.92rem;
+      color: #233a35;
+    }
+
+    .glanceSection {
+      border-top: 1px dashed #c8ddd6;
+      padding-top: 8px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .glanceSection:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .glanceTitle {
+      margin: 0;
+      font-size: 0.84rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .glanceList {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 4px;
+      font-size: 0.92rem;
+      color: #1f3631;
+    }
+
+    .glanceList li {
+      margin: 0;
+      word-break: break-word;
+    }
+
+    .glanceListBoxes {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .blockFact {
+      display: flex;
+      flex-direction: column;
+      background: #eef8f5;
+      border: 1px solid #b8d4cc;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.88rem;
+      color: #1f3631;
+    }
+
+    .blockFact a {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+    }
+    
+    .blockFact a strong {
+      color: #155c53;
+    }
+
+    .blockFact a:hover strong {
+      text-decoration: underline;
+    }
+
+    .factLink {
+      display: inline-block;
+      margin-top: 6px;
+      color: #155c53;
+      text-decoration: underline;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .factSub {
+      display: block;
+      color: #3b6b61;
+      font-size: 0.82rem;
+      margin-top: 2px;
+    }
+
+    .sourceList {
+      display: grid;
+      gap: 8px;
+    }
+
+    .sourceRow {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+      display: grid;
+      gap: 4px;
+    }
+
+    .sourceRow a {
+      color: #155c53;
+      text-decoration: none;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .sourceRow a:hover {
+      text-decoration: underline;
+    }
+
+    .sourceTitleLink {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .moreBtn {
+      width: fit-content;
+      border: 1px solid #b8d4cc;
+      background: #eef8f5;
+      color: #2b5f56;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .resultCard {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+      padding: 10px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .resultCard a {
+      color: #155c53;
+      text-decoration: none;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .resultCard a:hover {
+      text-decoration: underline;
+    }
+
+    .resultMeta {
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    .resultSnippet {
+      margin: 0;
+      font-size: 0.92rem;
+      color: #233a35;
+      word-break: break-word;
+    }
+
+    .lockbox {
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 12px;
+      margin-bottom: 14px;
+      background: #f1faf6;
+      border: 1px solid #c5ddd6;
+      display: grid;
+      gap: 10px;
+    }
+
+    .lockRow {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .keyInput {
+      flex: 1;
+      min-width: 240px;
+      border-radius: 10px;
+      border: 1px solid #b8d4cc;
+      padding: 10px;
+    }
+
+    .secondaryBtn {
+      background: #eef8f5;
+      color: #2b5f56;
+      border: 1px solid #b8d4cc;
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 720px) {
+      .header {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .avatar {
+        margin: 0 auto;
+      }
+
+      /* Forces the third profile picture (Yearbook image) to clean line break underneath */
+      .avatarWrap #yearbookAvatarImg {
+        flex-basis: 100%;
+        margin-top: 4px;
+        max-width: 120px; 
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+      <div class="titleBar">
+        <a id="backToSearch" class="backArrow" href="index.html" aria-label="Back to search">←</a>
+      </div>
+
+    <div id="loading" class="loading">Loading profile...</div>
+    <div id="errorBox" class="error"></div>
+
+    <section id="profileCard" class="profile" hidden>
+      <div class="header">
+          <div class="avatarWrap">
+            <img id="avatar" class="avatar" alt="Profile avatar" loading="lazy">
+            <img id="iservAvatarImg" class="avatarMini" alt="IServ avatar" loading="lazy" style="display: none;">
+            <img id="yearbookAvatarImg" class="avatarMini" alt="Yearbook photo" loading="lazy" style="display: none;">
+          </div>
+        <div>
+          <h1 id="fullName"></h1>
+          <p id="shortName" class="sub"></p>
+          <p id="profileMeta" class="profileMeta"></p>
+        </div>
+      </div>
+      <div class="grid" id="profileRowsTop"></div>
+      <div id="familyBlock" class="grid" hidden>
+        <div class="row">
+          <span class="label">Family</span>
+          <div id="familyList" class="familyList"></div>
+        </div>
+      </div>
+      <div class="grid" id="aiSearchBlock">
+        <div class="row searchRow">
+          <span class="label">Search</span>
+          <div class="searchActions" style="display: flex; align-items: center; gap: 10px;">
+            <button id="searchBtn" class="primaryBtn" type="button">Search</button>
+            <div style="display: flex; align-items: center; gap: 5px;" title="Costs 3 Base + 1 per depth">
+              <span style="font-size: 12px; color: #5F6368;">Depth:</span>
+              <input type="range" id="scrapeDepthSlider" min="2" max="7" value="5" style="width: 60px;" oninput="document.getElementById('depthDisplay').innerText = this.value">
+              <span id="depthDisplay" style="font-size: 12px; font-weight: 500; color: #5F6368;">5</span>
+              <span id="creditsInfoIcon" style="cursor: pointer; background: #e0f2f1; color: #00796b; border-radius: 50%; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; margin-left: 5px;" title="Click to view credit usage">?</span>
+            </div>
+          </div>
+          <p id="searchHint" class="searchHint">No search data loaded yet.</p>
+          <div id="searchResults" class="searchResults" hidden></div>
+        </div>
+      </div>
+      <div class="grid" id="profileRowsBottom"></div>
+    </section>
+  </div>
+
+  <div id="imageModal" class="imageModal" aria-hidden="true">
+    <div class="imageModalCard">
+      <div class="imageModalBar">
+        <strong id="imageModalTitle">Profile Picture</strong>
+        <div class="imageModalActions">
+          <button id="downloadImageBtn" class="imageModalBtn" type="button">Download</button>
+          <button id="closeImageModalBtn" class="imageModalBtn" type="button">Close</button>
+        </div>
+      </div>
+      <div class="imageModalBody">
+        <img id="imageModalImg" alt="Profile picture preview">
+      </div>
+    </div>
+  </div>
+
+  <div id="creditsModal" class="imageModal" aria-hidden="true">
+    <div class="imageModalCard" style="max-width: 400px; display: block;">
+      <div class="imageModalBar">
+        <strong>AI Search Credits</strong>
+        <div class="imageModalActions">
+          <button id="closeCreditsModalBtn" class="imageModalBtn" type="button">Close</button>
+        </div>
+      </div>
+      <div style="padding: 20px; font-size: 14px; line-height: 1.5; color: #1c4b44;">
+        <p><strong>How it works:</strong><br>
+        AI searches cost credits. 3 Base credits + 1 credit per depth level.</p>
+        <p><strong>Your Balance: <span id="creditsModalBalance">Loading...</span></strong></p>
+        <p style="font-size: 12px; color: #555; margin-top: 10px;"><em>Loading an existing cached profile does not use credits. Re-doing an existing search will cost credits again.</em></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="iservLoginModal" class="imageModal" aria-hidden="true">
+    <div class="imageModalCard" style="max-width: 440px; display: block;">
+      <div class="imageModalBar">
+        <strong>IServ Login Needed</strong>
+        <div class="imageModalActions">
+          <button id="closeIservLoginModalBtn" class="imageModalBtn" type="button">Close</button>
+        </div>
+      </div>
+      <div style="padding: 20px; font-size: 14px; line-height: 1.5; color: #1c4b44;">
+        <p>Please log into IServ so the profile picture can load.</p>
+        <p><a href="https://jfks-portal.de/iserv/" target="_blank" rel="noopener noreferrer">Open IServ login</a></p>
+        <p>Make sure to click <strong>Remember me</strong>. This is the same login used to access the school computers.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://zkdfkzuhrstdtelllwot.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_QzQ-jNJNhpbxU5mvuwPhUA_XEHdXhsx";
+    const SUPABASE_TABLE = "maindata";
+    const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='64' fill='%23d9efe9'/%3E%3Ccircle cx='64' cy='50' r='24' fill='%236ca397'/%3E%3Cpath d='M24 110c4-22 20-36 40-36s36 14 40 36' fill='%236ca397'/%3E%3C/svg%3E";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    const loadingEl = document.getElementById("loading");
+    const errorBox = document.getElementById("errorBox");
+    const profileCard = document.getElementById("profileCard");
+    const avatarEl = document.getElementById("avatar");
+    const iservAvatarImg = document.getElementById("iservAvatarImg");
+    const yearbookAvatarImg = document.getElementById("yearbookAvatarImg");
+    const fullNameEl = document.getElementById("fullName");
+    const creditsInfoIcon = document.getElementById("creditsInfoIcon");
+    const creditsModal = document.getElementById("creditsModal");
+    const closeCreditsModalBtn = document.getElementById("closeCreditsModalBtn");
+    const iservLoginModal = document.getElementById("iservLoginModal");
+    const closeIservLoginModalBtn = document.getElementById("closeIservLoginModalBtn");
+
+    const shortNameEl = document.getElementById("shortName");
+    const profileMetaEl = document.getElementById("profileMeta");
+    const profileRowsTop = document.getElementById("profileRowsTop");
+    const profileRowsBottom = document.getElementById("profileRowsBottom");
+    const familyBlock = document.getElementById("familyBlock");
+    const familyList = document.getElementById("familyList");
+    const backToSearch = document.getElementById("backToSearch");
+    const searchBtn = document.getElementById("searchBtn");
+    const scrapeDepthSlider = document.getElementById("scrapeDepthSlider");
+    const searchHint = document.getElementById("searchHint");
+    const searchResults = document.getElementById("searchResults");
+    const imageModal = document.getElementById("imageModal");
+    const imageModalImg = document.getElementById("imageModalImg");
+    const imageModalTitle = document.getElementById("imageModalTitle");
+    const downloadImageBtn = document.getElementById("downloadImageBtn");
+    const closeImageModalBtn = document.getElementById("closeImageModalBtn");
+
+    let currentProfile = null;
+    let currentSession = null;
+    let currentAiRecord = null;
+    let modalImageUrl = "";
+    let modalImageLabel = "Profile";
+    let iservLoginPromptedForProfileId = null;
+    let yearbookBlobUrl = null;
+
+    const DIRECTORY_CACHE_KEY = "jfks_maindata_cache_v1";
+    const DIRECTORY_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+    const AI_RESEARCH_TABLE = "person_ai_research";
+    const AI_EDGE_FUNCTION = "ai-research-person";
+    const YB_COOKIE = "jfks_yb_key";
+
+    // ── AES-256 Yearbook Key helpers ────────────────────────────────────────
+
+    function saveYBKey(key) {
+      const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+      document.cookie = `${YB_COOKIE}=${encodeURIComponent(key)}; path=/; expires=${expires}; SameSite=Strict`;
+    }
+
+    function getYBKey() {
+      const m = document.cookie.match(new RegExp(`(?:^|;\\s*)${YB_COOKIE}=([^;]*)`));
+      return m ? decodeURIComponent(m[1]) : null;
+    }
+
+    function checkUrlForYBKey() {
+      const params = new URLSearchParams(window.location.search);
+      const key = params.get("YB");
+      if (!key) return;
+      saveYBKey(key);
+      params.delete("YB");
+      const clean =
+        window.location.pathname +
+        (params.toString() ? "?" + params.toString() : "") +
+        window.location.hash;
+      history.replaceState(null, "", clean);
+    }
+
+    async function decryptAESCBC(encryptedBytes, keyString) {
+      const keyBytes = new TextEncoder().encode(keyString.trim());
+      const cryptoKey = await crypto.subtle.importKey(
+        "raw", keyBytes, { name: "AES-CBC" }, false, ["decrypt"]
+      );
+      const iv         = encryptedBytes.slice(0, 16);
+      const ciphertext = encryptedBytes.slice(16);
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-CBC", iv }, cryptoKey, ciphertext
+      );
+      return new Uint8Array(decrypted);
+    }
+
+    async function loadEncryptedYearbookImage(baseUrl) {
+      const key = getYBKey();
+      if (!key) return null;
+      try {
+        const res = await fetch(baseUrl + ".enc");
+        if (!res.ok) return null;
+        const raw       = new Uint8Array(await res.arrayBuffer());
+        const decrypted = await decryptAESCBC(raw, key);
+
+        let mime = "image/png";
+        if (decrypted[0] === 0xFF && decrypted[1] === 0xD8) mime = "image/jpeg";
+        else if (decrypted[0] === 0x47 && decrypted[1] === 0x49) mime = "image/gif";
+        else if (decrypted[0] === 0x52 && decrypted[1] === 0x49) mime = "image/webp";
+
+        return URL.createObjectURL(new Blob([decrypted], { type: mime }));
+      } catch (err) {
+        console.warn("Yearbook decryption failed:", err);
+        return null;
+      }
+    }
+
+    checkUrlForYBKey();
+
+    // ── Existing helpers ─────────────────────────────────────────────────────
+
+    function parseAvatarFromHtml(avatarHtml) {
+      if (!avatarHtml || typeof avatarHtml !== "string") return "";
+      const sourceSrcset = avatarHtml.match(/<source[^>]*srcset=\"([^\"]+)\"/i);
+      if (sourceSrcset && sourceSrcset[1]) {
+          const candidates = sourceSrcset[1]
+            .split(",")
+            .map((entry) => entry.trim().split(" "))
+            .map(([url, descriptor]) => ({ url, size: parseInt((descriptor || "").replace(/[^0-9]/g, ""), 10) || 0 }))
+            .filter((item) => item.url);
+          if (candidates.length) {
+            candidates.sort((a, b) => b.size - a.size);
+            return candidates[0].url;
+          }
+      }
+      const srcMatch = avatarHtml.match(/<img[^>]*src=\"([^\"]+)\"/i);
+      return srcMatch ? srcMatch[1] : "";
+    }
+
+    function makeHiResGoogleUrl(url, size) {
+      const raw = String(url || "").trim();
+      if (!raw || !/googleusercontent\.com/i.test(raw)) return raw;
+      return raw.replace(/=s\d+(-p-k-rw-no-mo|-p-k-rw-no|-p|)?/i, `=s${size}$1`).replace(/=s\d+$/i, `=s${size}`);
+    }
+
+    function makeHiResIservUrl(url, size) {
+      const raw = String(url || "").trim();
+      if (!raw) return "";
+      return raw
+        .replace(/([?&]width=)\d+/i, `$1${size}`)
+        .replace(/([?&]height=)\d+/i, `$1${size}`);
+    }
+
+    function extractEmails(raw) {
+      const emails = [];
+      if (Array.isArray(raw.Email)) {
+        for (const email of raw.Email) {
+          if (email) emails.push(String(email).toLowerCase());
+        }
+      }
+      return [...new Set(emails)];
+    }
+
+    function parseIservAvatar(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+      if (raw.startsWith("<")) {
+        return parseAvatarFromHtml(raw);
+      }
+      return raw;
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function getLastName(value) {
+      const text = String(value || "").trim();
+      if (!text) return "";
+      if (text.includes(" ")) {
+        const parts = text.split(/\s+/).filter(Boolean);
+        return (parts[parts.length - 1] || "").toLowerCase();
+      }
+      if (text.includes(".")) {
+        const parts = text.split(".").filter(Boolean);
+        return (parts[parts.length - 1] || "").toLowerCase();
+      }
+      return "";
+    }
+
+    function normalizeProfile(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      const name = (raw.Name || "").trim();
+      if (!name) return null;
+
+      // Extract the YearbookName value, falling back cleanly to standard Name if vacant
+      const yearbookName = (raw.YearbookName || "").trim() || name;
+
+      const iservAvatar = parseIservAvatar(raw.IservPP);
+      const googleAvatar = makeHiResGoogleUrl(raw.GooglePP || "", 512);
+      const extra = String(raw.Type || "").trim();
+      const emails = extractEmails(raw);
+      const primaryEmail = emails[0] || "";
+
+      let role = "Other";
+      if (/teacher/i.test(extra)) role = "Teacher";
+      else if (/student/i.test(extra)) role = "Student";
+
+      const className = String(raw.Class || "").trim();
+
+      return {
+        id: name.toLowerCase(),
+        name: yearbookName, // Feeds into the subtitle element shortNameEl
+        fullName: name,     // Feeds into the main h1 header fullNameEl
+        email: primaryEmail,
+        role,
+        className,
+        extra,
+        google: Boolean(raw.Google),
+        iserv: Boolean(raw.Iserv),
+        avatar: googleAvatar || iservAvatar || DEFAULT_AVATAR,
+        googleAvatar: googleAvatar || DEFAULT_AVATAR,
+        iservAvatar: iservAvatar || "",
+        yearbookPhoto: raw.YearbookPhoto || "",
+        emails,
+        raw
+      };
+    }
+
+    function getParams() {
+      return new URLSearchParams(window.location.search);
+    }
+
+    function buildBackLinks() {
+      const params = getParams();
+      const backParams = new URLSearchParams(params);
+      backParams.delete("profile");
+      backParams.delete("key");
+      const backHref = backParams.toString() ? `index.html?${backParams.toString()}` : "index.html";
+      backToSearch.href = backHref;
+    }
+
+    function pickProfile(profiles) {
+      const params = getParams();
+      const profileKey = (params.get("profile") || "").trim().toLowerCase();
+      const q = (params.get("q") || "").trim().toLowerCase();
+
+      if (profileKey) {
+        // Updated logic to ensure lookups succeed using standard name, yearbook name or database key
+        const direct = profiles.find((p) => 
+          p.name.toLowerCase() === profileKey || 
+          p.fullName.toLowerCase() === profileKey ||
+          (p.raw.Name && p.raw.Name.toLowerCase() === profileKey)
+        );
+        if (direct) return direct;
+      }
+
+      if (q) {
+        return profiles.find((p) => {
+          const haystack = [p.name, p.fullName, p.email, p.extra].join(" ").toLowerCase();
+          return haystack.includes(q);
+        }) || null;
+      }
+
+      return null;
+    }
+
+    function rowHtml(label, value) {
+      return `
+        <div class="row">
+          <span class="label">${label}</span>
+          <div class="value">${value || "-"}</div>
+        </div>
+      `;
+    }
+
+    function isAdminSession(session) {
+      const email = session && session.user && session.user.email ? String(session.user.email).toLowerCase() : "";
+      return email.endsWith("@fynn.qzz.io");
+    }
+
+    function formatTime(value) {
+      if (!value) return "Unknown";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "Unknown";
+      return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+    }
+
+    function flattenSourceResults(sourceData) {
+      const groups = sourceData && Array.isArray(sourceData.resultsByQuery) ? sourceData.resultsByQuery : [];
+      const flat = [];
+      for (const group of groups) {
+        const results = Array.isArray(group.results) ? group.results : [];
+        for (const entry of results) {
+          flat.push({
+            query: group.query || "",
+            rank: typeof entry.rank === "number" ? entry.rank : null,
+            title: entry.title || "",
+            snippet: entry.snippet || "",
+            url: entry.url || ""
+          });
+        }
+      }
+      return flat;
+    }
+
+    function compactText(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function uniqueByKey(items, keyFn) {
+      const seen = new Set();
+      const out = [];
+      for (const item of items) {
+        const key = keyFn(item);
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        out.push(item);
+      }
+      return out;
+    }
+
+    function buildListSection(title, values) {
+      const cleaned = uniqueByKey(
+        (Array.isArray(values) ? values : [])
+          .filter((v) => v && (v.text || v.html))
+          .map((v) => ({ 
+            text: compactText(v.text), 
+            html: v.html ? v.html : null,
+            url: compactText(v.url) 
+          })),
+        (v) => v.text.toLowerCase()
+      );
+      if (cleaned.length === 0) return null;
+
+      const section = document.createElement("section");
+      section.className = "glanceSection";
+      const heading = document.createElement("h4");
+      heading.className = "glanceTitle";
+      heading.textContent = title;
+      const list = document.createElement("div");
+      list.className = "glanceListBoxes";
+
+      for (const item of cleaned.slice(0, 6)) {
+        const span = document.createElement("span");
+        span.className = "factBox blockFact";
+        
+        const contentEl = document.createElement("span");
+        if (item.html) {
+          contentEl.innerHTML = item.html;
+        } else {
+          contentEl.textContent = item.text;
+        }
+        
+        span.appendChild(contentEl);
+
+        if (item.url) {
+          const a = document.createElement("a");
+          a.href = item.url;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.className = "factLink";
+          a.textContent = "Open source";
+          span.appendChild(a);
+        }
+        list.appendChild(span);
+      }
+
+      section.appendChild(heading);
+      section.appendChild(list);
+      return section;
+    }
+
+    function projectGlanceData(searchResults) {
+      const data = searchResults && typeof searchResults === "object" ? searchResults : {};
+      const profile = Array.isArray(data.profiles) && data.profiles.length ? data.profiles[0] : {};
+
+      const sports = (Array.isArray(profile.sports) ? profile.sports : [])
+        .map((s) => {
+          const sportBase = escapeHtml([compactText(s.sport), compactText(s.teamOrClub), compactText(s.level)].filter(Boolean).join(" - "));
+          const eventsArray = Array.isArray(s.eventsOrMeets) ? s.eventsOrMeets : (s.eventsOrMeets ? [s.eventsOrMeets] : []);
+          const statsArray = Array.isArray(s.topTimesOrStats) ? s.topTimesOrStats : (s.topTimesOrStats ? [s.topTimesOrStats] : []);
+          const events = eventsArray.map(e => escapeHtml(compactText(e))).filter(Boolean).join("<br>• ");
+          const stats = statsArray.map(stat => escapeHtml(compactText(stat))).filter(Boolean).join("<br>• ");
+          
+          let html = `<strong>${sportBase}</strong>`;
+          if (events) html += `<br><span class="factSub">Events:<br>&bull; ${events}</span>`;
+          if (stats) html += `<br><span class="factSub">Stats:<br>&bull; ${stats}</span>`;
+
+          return { 
+            text: [sportBase, events, stats].join(" "), 
+            html: html,
+            url: s.sourceUrl 
+          };
+        });
+
+      const activities = (Array.isArray(profile.activities) ? profile.activities : [])
+        .map((a) => {
+          const name = escapeHtml(compactText(a.name));
+          const desc = escapeHtml(compactText(a.description));
+          let html = `<strong>${name}</strong>`;
+          if (desc) html += `<br><span class="factSub">${desc}</span>`;
+          
+          return {
+            text: [name, desc].join(" "),
+            html: html,
+            url: a.sourceUrl
+          };
+        });
+
+      const work = (Array.isArray(profile.work) ? profile.work : [])
+        .map((w) => {
+          const org = escapeHtml(compactText(w.organization));
+          const role = escapeHtml(compactText(w.role));
+          const period = escapeHtml(compactText(w.period));
+          
+          let html = `<strong>${org}</strong>`;
+          if (role) html += `<br><span class="factSub">${role}</span>`;
+          if (period) html += `<br><span class="factSub">${period}</span>`;
+          
+          return {
+            text: [org, role, period].join(" "),
+            html: html,
+            url: w.sourceUrl
+          };
+        });
+
+      const education = (Array.isArray(profile.education) ? profile.education : [])
+        .map((e) => {
+          const inst = escapeHtml(compactText(e.institution));
+          const deg = escapeHtml(compactText(e.degree));
+          const yr = escapeHtml(compactText(e.year));
+          
+          let html = `<strong>${inst}</strong>`;
+          if (deg) html += `<br><span class="factSub">${deg}</span>`;
+          if (yr) html += `<br><span class="factSub">${yr}</span>`;
+          
+          return {
+            text: [inst, deg, yr].join(" "),
+            html: html,
+            url: e.sourceUrl
+          };
+        });
+
+      const awards = (Array.isArray(profile.awards) ? profile.awards : [])
+        .map((a) => ({
+          text: compactText([a.title, a.issuer, a.year].filter(Boolean).join(" - ")),
+          url: a.sourceUrl
+        }));
+
+      const socials = (Array.isArray(profile.socialLinks) ? profile.socialLinks : [])
+        .map((s) => ({
+          text: compactText([s.platform, s.url].filter(Boolean).join(": ")),
+          url: s.sourceUrl || s.url
+        }));
+
+      const websites = (Array.isArray(profile.websites) ? profile.websites : [])
+        .map((w) => ({
+          text: compactText(w.label || w.url),
+          url: w.url || w.sourceUrl
+        }));
+
+      return {
+        summary: compactText(data.summary || profile.headline || ""),
+        sports,
+        activities,
+        work,
+        education,
+        awards,
+        socials,
+        websites,
+      };
+    }
+
+    function renderSourcesList(items) {
+      const wrap = document.createElement("div");
+      wrap.className = "glanceSection";
+      const title = document.createElement("h4");
+      title.className = "glanceTitle";
+      title.textContent = "Sources";
+      wrap.appendChild(title);
+
+      const list = document.createElement("div");
+      list.className = "sourceList";
+      wrap.appendChild(list);
+
+      const uniqueItems = uniqueByKey(items, (item) => compactText(item.url).toLowerCase());
+      const initialCount = 5;
+      let expanded = false;
+
+      const renderRows = () => {
+        list.innerHTML = "";
+        const visible = expanded ? uniqueItems : uniqueItems.slice(0, initialCount);
+        for (const item of visible) {
+          const row = document.createElement("div");
+          row.className = "sourceRow";
+
+          const link = document.createElement("a");
+          link.href = item.url || "#";
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.className = "sourceTitleLink";
+          link.textContent = item.title || item.url || "Open source";
+
+          const meta = document.createElement("div");
+          meta.className = "resultMeta";
+          const query = item.query || "search";
+          const rank = Number.isFinite(item.rank) ? `#${item.rank}` : "#-";
+          meta.textContent = `${query} • ${rank}`;
+
+          row.appendChild(link);
+          row.appendChild(meta);
+          list.appendChild(row);
+        }
+      };
+
+      renderRows();
+
+      if (uniqueItems.length > initialCount) {
+        const moreBtn = document.createElement("button");
+        moreBtn.type = "button";
+        moreBtn.className = "moreBtn";
+        moreBtn.textContent = `More (${uniqueItems.length - initialCount})`;
+        moreBtn.addEventListener("click", () => {
+          expanded = !expanded;
+          moreBtn.textContent = expanded ? "Show less" : `More (${uniqueItems.length - initialCount})`;
+          renderRows();
+        });
+        wrap.appendChild(moreBtn);
+      }
+
+      return wrap;
+    }
+
+    function renderAiResults(record, cost, remainingCredits) {
+      currentAiRecord = record || null;
+      searchResults.innerHTML = "";
+
+      if (!record) {
+        searchHint.textContent = "No search data loaded yet.";
+        searchResults.hidden = true;
+        return;
+      }
+
+      const sourceData = record.source_data || {};
+      const items = flattenSourceResults(sourceData);
+
+      searchHint.textContent = `Stored results from ${formatTime(record.updated_at)}`;
+      
+      if (cost !== undefined && remainingCredits !== undefined && remainingCredits !== "Unlimited") {
+        searchHint.textContent += ` | Cost: ${cost} credits | Balance: ${remainingCredits} credits`;
+      }
+
+      const quick = projectGlanceData(record.search_results || {});
+      const glance = document.createElement("section");
+      glance.className = "quickGlance";
+
+      if (quick.summary) {
+        const summary = document.createElement("p");
+        summary.className = "quickSummary";
+        summary.textContent = quick.summary;
+        glance.appendChild(summary);
+      }
+
+      const sectionSpecs = [
+        ["Sports", quick.sports],
+        ["Activities", quick.activities],
+        ["Teams / Work", quick.work],
+        ["Education", quick.education],
+        ["Awards", quick.awards],
+        ["Social", quick.socials],
+        ["Websites", quick.websites],
+      ];
+
+      for (const [title, values] of sectionSpecs) {
+        const section = buildListSection(title, values);
+        if (section) glance.appendChild(section);
+      }
+
+      searchResults.appendChild(glance);
+      searchResults.hidden = false;
+    }
+
+    async function fetchAiRecordByName(personName) {
+      const { data, error } = await supabaseClient
+        .from(AI_RESEARCH_TABLE)
+        .select("id, person_name, search_results, source_data, created_at, updated_at")
+        .eq("person_name", personName)
+        .maybeSingle();
+      if (error) throw error;
+      return data || null;
+    }
+
+    async function runAiSearch(forceRefresh) {
+      if (!currentProfile) return;
+
+      searchBtn.disabled = true;
+      searchHint.textContent = "Searching with Google...";
+      
+      const statusUpdates = [
+        { time: 2000, text: "Looking at top results..." },
+        { time: 5000, text: "Gathering and reading pages..." },
+        { time: 8000, text: "Almost done... analyzing with AI..." },
+      ];
+      
+      const timeouts = statusUpdates.map(update =>
+        setTimeout(() => { searchHint.textContent = update.text; }, update.time)
+      );
+
+      try {
+        if (!forceRefresh) {
+          const cachedRecord = await fetchAiRecordByName(currentProfile.fullName);
+          if (cachedRecord) {
+            renderAiResults(cachedRecord);
+            return;
+          }
+        }
+
+        const { data: sessionData } = await supabaseClient.auth.getSession();
+        currentSession = sessionData?.session || null;
+        if (!currentSession) {
+          throw new Error("Your session has expired. Please sign in again.");
+        }
+
+        const token = currentSession.access_token;
+        const { data, error } = await supabaseClient.functions.invoke(AI_EDGE_FUNCTION, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          body: {
+            personName: currentProfile.fullName,
+            personClass: currentProfile.className,
+            forceRefresh: Boolean(forceRefresh),
+            scrapeDepth: parseInt(scrapeDepthSlider.value, 10)
+          }
+        });
+        if (error) throw error;
+
+        if (data && data.record) {
+          renderAiResults(data.record, data.cost, data.remainingCredits);
+        } else {
+          const fallback = await fetchAiRecordByName(currentProfile.fullName);
+          renderAiResults(fallback);
+        }
+      } catch (error) {
+        searchHint.textContent = error.message || "Search failed. Try again later.";
+      } finally {
+        timeouts.forEach(clearTimeout);
+        searchBtn.disabled = false;
+      }
+    }
+
+    function jsonRow(label, data) {
+      return `
+        <details class="jsonBlock">
+          <summary>${label}</summary>
+          <pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>
+        </details>
+      `;
+    }
+
+    function renderFamily(selectedProfile, allProfiles) {
+      const lastName = getLastName(selectedProfile.fullName);
+      if (!lastName) {
+        familyBlock.hidden = true;
+        familyList.innerHTML = "";
+        return;
+      }
+
+      const family = allProfiles
+        .filter((profile) => profile.id !== selectedProfile.id)
+        .filter((profile) => getLastName(profile.fullName) === lastName)
+        .sort((a, b) => a.fullName.localeCompare(b.fullName));
+
+      if (family.length === 0) {
+        familyBlock.hidden = true;
+        familyList.innerHTML = "";
+        return;
+      }
+
+      familyList.innerHTML = "";
+      const baseParams = new URLSearchParams(window.location.search);
+
+      for (const member of family) {
+        const link = document.createElement("a");
+        link.className = "familyCard";
+        const linkParams = new URLSearchParams(baseParams);
+        // Retain standard profile structure mapping inside URL queries
+        linkParams.set("profile", member.fullName);
+        link.href = `contacts.html?${linkParams.toString()}`;
+
+        const avatar = document.createElement("img");
+        avatar.className = "familyAvatar";
+        avatar.src = member.googleAvatar || member.avatar;
+        avatar.alt = member.fullName;
+        avatar.loading = "lazy";
+        avatar.referrerPolicy = "no-referrer";
+        avatar.addEventListener("error", () => {
+          if (avatar.src !== member.iservAvatar && member.iservAvatar) {
+            avatar.src = member.iservAvatar;
+          } else {
+            avatar.src = DEFAULT_AVATAR;
+          }
+        });
+
+        const textWrap = document.createElement("div");
+        const name = document.createElement("p");
+        name.className = "familyName";
+        name.textContent = member.fullName;
+        const meta = document.createElement("p");
+        meta.className = "familyMeta";
+        const isStudent = member.role === "Student";
+        const parts = [];
+        if (isStudent && member.className) parts.push(member.className);
+        parts.push(member.role);
+        meta.textContent = parts.join(" • ");
+
+        textWrap.appendChild(name);
+        textWrap.appendChild(meta);
+        link.appendChild(avatar);
+        link.appendChild(textWrap);
+        familyList.appendChild(link);
+      }
+
+      familyBlock.hidden = false;
+    }
+
+    function renderProfile(profile) {
+      currentProfile = profile;
+
+      if (yearbookBlobUrl) {
+        URL.revokeObjectURL(yearbookBlobUrl);
+        yearbookBlobUrl = null;
+      }
+
+      avatarEl.src = profile.avatar;
+      avatarEl.referrerPolicy = "no-referrer";
+
+      if (profile.iservAvatar) {
+        iservAvatarImg.src = profile.iservAvatar;
+        iservAvatarImg.referrerPolicy = "no-referrer";
+        iservAvatarImg.style.display = "block";
+        verifyIservLogin(profile);
+      } else {
+        iservAvatarImg.style.display = "none";
+        if (profile.iserv) {
+          verifyIservLogin(profile);
+        }
+      }
+
+      yearbookAvatarImg.style.display = "none";
+
+      if (profile.yearbookPhoto && profile.className) {
+        const ybBase = `Yearbook25-26/${profile.className}/${profile.yearbookPhoto}.png`;
+        loadEncryptedYearbookImage(ybBase).then(objectUrl => {
+          if (objectUrl) {
+            yearbookBlobUrl = objectUrl;
+            yearbookAvatarImg.src = objectUrl;
+            yearbookAvatarImg.style.display = "block";
+          }
+        });
+      }
+
+      fullNameEl.textContent = profile.fullName;
+      shortNameEl.textContent = profile.name; // Displays the custom YearbookName cleanly
+      profileMetaEl.textContent = profile.google && profile.iserv
+        ? "Google + IServ"
+        : profile.google
+          ? "Google"
+          : profile.iserv
+            ? "IServ"
+            : "Unknown";
+
+      profileRowsTop.innerHTML = [
+        rowHtml("Emails", (profile.emails && profile.emails.length ? profile.emails.join(" • ") : profile.email || "No email available")),
+        rowHtml("Role", profile.role),
+        rowHtml("Class", profile.className || "Not provided")
+      ].join("");
+
+      profileRowsBottom.innerHTML = [
+        rowHtml("Extra", profile.extra || "No extra metadata"),
+        rowHtml("Google Status", profile.google ? "Present" : "Missing"),
+        rowHtml("IServ Status", profile.iserv ? "Present" : "Missing"),
+        jsonRow("View Row", profile.raw)
+      ].join("");
+
+      loadingEl.hidden = true;
+      profileCard.hidden = false;
+    }
+
+    function openIservLoginModal() {
+      iservLoginModal.classList.add("open");
+      iservLoginModal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeIservLoginModal() {
+      iservLoginModal.classList.remove("open");
+      iservLoginModal.setAttribute("aria-hidden", "true");
+    }
+
+    function verifyIservLogin(profile) {
+      if (!profile || !profile.iserv || !profile.id) return;
+      if (iservLoginPromptedForProfileId === profile.id) return;
+      iservLoginPromptedForProfileId = profile.id;
+
+      const testSrc = profile.iservAvatar || "";
+      if (!testSrc) {
+        openIservLoginModal();
+        return;
+      }
+
+      const probe = new Image();
+      probe.referrerPolicy = "no-referrer";
+      probe.onload = () => {
+        if (currentProfile && currentProfile.id === profile.id && iservLoginModal.classList.contains("open")) {
+          closeIservLoginModal();
+        }
+      };
+      probe.onerror = () => {
+        if (currentProfile && currentProfile.id === profile.id) {
+          openIservLoginModal();
+        }
+      };
+      probe.src = testSrc;
+    }
+
+    function readCachedRows() {
+      try {
+        const raw = localStorage.getItem(DIRECTORY_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.rows) || typeof parsed.fetchedAt !== "number") return null;
+        if (Date.now() - parsed.fetchedAt > DIRECTORY_CACHE_TTL_MS) return null;
+        return parsed.rows;
+      } catch (_error) {
+        return null;
+      }
+    }
+
+    function writeCachedRows(rows) {
+      try {
+        localStorage.setItem(DIRECTORY_CACHE_KEY, JSON.stringify({ fetchedAt: Date.now(), rows }));
+      } catch (_error) {
+        // Ignore storage failures.
+      }
+    }
+
+    function closeImageModal() {
+      imageModal.classList.remove("open");
+      imageModal.setAttribute("aria-hidden", "true");
+    }
+
+    function openImageModal(kind) {
+      if (!currentProfile) return;
+
+      let src = "";
+      if (kind === "iserv") {
+        src = makeHiResIservUrl(currentProfile.iservAvatar || "", 512) || currentProfile.iservAvatar || "";
+        modalImageLabel = "IServ";
+      } else if (kind === "yearbook") {
+        src = yearbookBlobUrl || "";
+        modalImageLabel = "Yearbook";
+      } else {
+        src = makeHiResGoogleUrl((currentProfile.raw && currentProfile.raw.GooglePP) || currentProfile.googleAvatar || "", 512);
+        if (!src) {
+          src = makeHiResIservUrl(currentProfile.iservAvatar || "", 512) || currentProfile.iservAvatar || "";
+        }
+        modalImageLabel = "Google";
+      }
+
+      if (!src) src = DEFAULT_AVATAR;
+
+      modalImageUrl = src;
+      imageModalTitle.textContent = `${modalImageLabel} Profile Picture`;
+      imageModalImg.src = src;
+      imageModal.classList.add("open");
+      imageModal.setAttribute("aria-hidden", "false");
+    }
+
+    async function openCreditsModal() {
+      creditsModal.classList.add("open");
+      creditsModal.setAttribute("aria-hidden", "false");
+      const { data: sessionData } = await supabaseClient.auth.getSession();
+      if (isAdminSession(sessionData?.session)) {
+        document.getElementById("creditsModalBalance").textContent = "Unlimited (Admin)";
+        return;
+      }
+      if (sessionData?.session?.user) {
+        const { data } = await supabaseClient.from('accounts').select('credit_balance').eq('user_id', sessionData.session.user.id).single();
+        document.getElementById("creditsModalBalance").textContent = data ? `${data.credit_balance} credits` : "Could not load";
+      } else {
+        document.getElementById("creditsModalBalance").textContent = "Please sign in";
+      }
+    }
+      
+    function closeCreditsModal() {
+      creditsModal.classList.remove("open");
+      creditsModal.setAttribute("aria-hidden", "true");
+    }
+
+    async function downloadModalImage() {
+      if (!modalImageUrl) return;
+      const fileName = `${(currentProfile && currentProfile.fullName) || "profile"}-${modalImageLabel.toLowerCase()}-highres.jpg`;
+
+      try {
+        const response = await fetch(modalImageUrl, { mode: "cors" });
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = fileName;
+        link.click();
+        URL.revokeObjectURL(objectUrl);
+      } catch (error) {
+        const link = document.createElement("a");
+        link.href = modalImageUrl;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.click();
+      }
+    }
+
+    async function fetchAllRows() {
+      const cached = readCachedRows();
+      if (cached) return cached;
+
+      const pageSize = 1000;
+      let offset = 0;
+      const rows = [];
+
+      while (true) {
+        const { data, error } = await supabaseClient
+          .from(SUPABASE_TABLE)
+          .select("*")
+          .order("Name", { ascending: true })
+          .range(offset, offset + pageSize - 1);
+
+        if (error) throw error;
+        rows.push(...(data || []));
+        if (!data || data.length < pageSize) break;
+        offset += pageSize;
+      }
+
+      writeCachedRows(rows);
+      return rows;
+    }
+
+    async function init() {
+      buildBackLinks();
+      try {
+        const { data: sessionData } = await supabaseClient.auth.getSession();
+        if (!sessionData || !sessionData.session) {
+          throw new Error("Not signed in. Open index page and sign in first.");
+        }
+        currentSession = sessionData.session;
+
+        const rawRows = await fetchAllRows();
+        const profiles = rawRows.map(normalizeProfile).filter(Boolean);
+
+        const selected = pickProfile(profiles);
+        if (!selected) {
+          throw new Error("No profile found. Use ?profile=name or ?q=search-term in URL.");
+        }
+
+        renderProfile(selected);
+        renderFamily(selected, profiles);
+        const existingRecord = await fetchAiRecordByName(selected.fullName);
+        renderAiResults(existingRecord);
+      } catch (error) {
+        loadingEl.hidden = false;
+        profileCard.hidden = true;
+        familyBlock.hidden = true;
+        errorBox.style.display = "block";
+        errorBox.textContent = error.message || "Failed to load profile from Supabase.";
+      }
+    }
+
+    avatarEl.addEventListener("click", () => openImageModal("google"));
+    iservAvatarImg.addEventListener("click", () => openImageModal("iserv"));
+    yearbookAvatarImg.addEventListener("click", () => openImageModal("yearbook"));
+    
+    closeImageModalBtn.addEventListener("click", closeImageModal);
+    downloadImageBtn.addEventListener("click", downloadModalImage);
+    imageModal.addEventListener("click", (event) => {
+      if (event.target === imageModal) closeImageModal();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeImageModal();
+        closeCreditsModal();
+      }
+    });
+
+    creditsInfoIcon.addEventListener("click", openCreditsModal);
+    closeCreditsModalBtn.addEventListener("click", closeCreditsModal);
+    creditsModal.addEventListener("click", (event) => {
+      if (event.target === creditsModal) closeCreditsModal();
+    });
+    closeIservLoginModalBtn.addEventListener("click", closeIservLoginModal);
+    iservLoginModal.addEventListener("click", (event) => {
+      if (event.target === iservLoginModal) closeIservLoginModal();
+    });
+
+    window.addEventListener("scroll", () => {
+      const opacity = Math.max(0, Math.min(1, 1 - (window.scrollY / 220)));
+      backToSearch.style.opacity = String(opacity);
+      backToSearch.style.transform = `translateY(${Math.max(-2, -window.scrollY / 120)}px)`;
+      backToSearch.style.pointerEvents = opacity <= 0.08 ? "none" : "auto";
+    }, { passive: true });
+
+    window.dispatchEvent(new Event("scroll"));
+
+    searchBtn.addEventListener("click", async () => {
+      const hasVisibleResultForCurrentProfile =
+        currentAiRecord &&
+        currentProfile &&
+        String(currentAiRecord.person_name || "").toLowerCase() === String(currentProfile.fullName || "").toLowerCase();
+      await runAiSearch(Boolean(hasVisibleResultForCurrentProfile));
+    });
+
+    init();
+  </script>
+</body>
+</html>

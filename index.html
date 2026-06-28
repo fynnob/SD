@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>JFKS Directory Search</title>
+	<style>
+		:root {
+			--bg-1: #f4f8ef;
+			--bg-2: #d8ebc8;
+			--panel: rgba(255, 255, 255, 0.86);
+			--line: #c9ddba;
+			--text: #1f2b1b;
+			--muted: #56674f;
+			--accent: #2f7a4f;
+			--accent-2: #e38a2d;
+			--shadow: 0 18px 40px rgba(29, 47, 22, 0.15);
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			margin: 0;
+			font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+			color: var(--text);
+			background:
+				radial-gradient(circle at 20% 15%, rgba(227, 138, 45, 0.2), transparent 35%),
+				radial-gradient(circle at 80% 75%, rgba(47, 122, 79, 0.2), transparent 40%),
+				linear-gradient(160deg, var(--bg-1), var(--bg-2));
+			min-height: 100vh;
+			padding: 24px;
+		}
+
+		.wrap {
+			max-width: 1120px;
+			margin: 0 auto;
+		}
+
+		.hero {
+			background: var(--panel);
+			backdrop-filter: blur(5px);
+			border: 1px solid var(--line);
+			border-radius: 22px;
+			padding: 28px;
+			box-shadow: var(--shadow);
+			animation: rise 500ms ease;
+		}
+
+		h1 {
+			margin: 0 0 8px;
+			font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+			letter-spacing: 0.02em;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.titleIcon {
+			border: 0;
+			background: rgba(255, 255, 255, 0.78);
+			color: var(--muted);
+			font-size: 1.1rem;
+			padding: 6px 8px;
+			border-radius: 999px;
+			min-width: 30px;
+			height: 30px;
+			cursor: pointer;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: 0 2px 8px rgba(31, 43, 27, 0.12);
+		}
+
+		.controls {
+			margin-top: 22px;
+			display: grid;
+			gap: 12px;
+			grid-template-columns: 1fr;
+		}
+
+		.search {
+			width: 100%;
+			border-radius: 16px;
+			border: 2px solid #b7d1a6;
+			padding: 16px 18px;
+			font-size: 1.05rem;
+			outline: none;
+			background: #fbfef8;
+			transition: border-color 160ms ease, box-shadow 160ms ease;
+		}
+
+		.search:focus {
+			border-color: var(--accent);
+			box-shadow: 0 0 0 4px rgba(47, 122, 79, 0.16);
+		}
+
+		.filters {
+			display: grid;
+			gap: 10px;
+			grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		}
+
+		select,
+		button,
+		.filters input {
+			border-radius: 12px;
+			border: 1px solid #b9cfab;
+			padding: 12px;
+			background: #f8fdf4;
+			color: var(--text);
+			font-size: 0.98rem;
+		}
+
+		button {
+			cursor: pointer;
+			font-weight: 700;
+			background: linear-gradient(120deg, #2f7a4f, #2c915f);
+			color: #fff;
+			border: none;
+		}
+
+		.stats {
+			margin: 16px 2px 2px;
+			color: var(--muted);
+			font-size: 0.94rem;
+		}
+
+		.results {
+			margin-top: 18px;
+			display: grid;
+			gap: 12px;
+		}
+
+		.card {
+			display: grid;
+			grid-template-columns: 52px 1fr auto;
+			gap: 12px;
+			align-items: center;
+			text-decoration: none;
+			color: inherit;
+			background: var(--panel);
+			border: 1px solid var(--line);
+			border-radius: 14px;
+			padding: 12px 14px;
+			box-shadow: 0 8px 18px rgba(31, 43, 27, 0.08);
+			transform: translateY(0);
+			transition: transform 120ms ease, box-shadow 120ms ease;
+			animation: rise 420ms ease;
+		}
+
+		.card:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 12px 24px rgba(31, 43, 27, 0.14);
+		}
+
+		.avatar {
+			width: 52px;
+			height: 52px;
+			border-radius: 50%;
+			object-fit: cover;
+			border: 2px solid #d8e8cb;
+			background: #edf7e5;
+		}
+
+		.rightMeta {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.avatarSmall {
+			width: 32px;
+			height: 32px;
+			border-radius: 50%;
+			object-fit: cover;
+			border: 1px solid #c3ddba;
+			background: #edf7e5;
+		}
+
+		.name {
+			margin: 0;
+			font-size: 1.05rem;
+			font-weight: 700;
+			word-break: break-word;
+		}
+
+		.meta {
+			margin: 4px 0 0;
+			color: var(--muted);
+			font-size: 0.92rem;
+			word-break: break-word;
+		}
+
+		.pill {
+			padding: 6px 10px;
+			border-radius: 999px;
+			font-size: 0.8rem;
+			font-weight: 700;
+			white-space: nowrap;
+			background: #ebf5e4;
+			color: #2d6041;
+			border: 1px solid #c3ddba;
+		}
+
+		.error {
+			margin-top: 16px;
+			background: #fff1ef;
+			border: 1px solid #f2beb6;
+			color: #8f2d1d;
+			border-radius: 10px;
+			padding: 12px;
+			display: none;
+		}
+
+		.settingsMenu {
+			margin-top: 14px;
+			padding: 14px;
+			border-radius: 12px;
+			border: 1px solid #d1dec8;
+			background: #f6fcf1;
+			display: none;
+			gap: 10px;
+		}
+
+		.settingsMenu.open {
+			display: grid;
+		}
+
+		.lockRow {
+			display: flex;
+			gap: 8px;
+			flex-wrap: wrap;
+		}
+
+		.keyInput {
+			flex: 1;
+			min-width: 260px;
+			border-radius: 10px;
+			border: 1px solid #b9cfab;
+			padding: 10px;
+		}
+
+		.secondaryBtn {
+			background: #f0f7ea;
+			color: #2f5f40;
+			border: 1px solid #b9cfab;
+		}
+
+		#qrCanvas {
+			display: none;
+			padding: 8px;
+			border: 1px dashed #b7cfac;
+			border-radius: 10px;
+			width: fit-content;
+			background: white;
+		}
+
+		#scanVideo {
+			display: none;
+			width: 240px;
+			max-width: 100%;
+			border-radius: 10px;
+			border: 1px solid #b8d3aa;
+		}
+
+		@keyframes rise {
+			from {
+				opacity: 0;
+				transform: translateY(8px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="wrap">
+		<section class="hero">
+			<h1>JFKS lookup</h1>
+
+			<div class="controls">
+				<input id="q" class="search" type="search" placeholder="Search names, class, role..." autocomplete="off">
+				<div class="filters">
+					<select id="typeFilter" aria-label="Filter by role">
+						<option value="all">All profiles</option>
+						<option value="student">Students</option>
+						<option value="teacher">Teachers</option>
+						<option value="other">Other</option>
+					</select>
+					<input id="classFilter" type="text" placeholder="Class filter (e.g. 11a)">
+					<select id="sourceFilter" aria-label="Filter by source">
+						<option value="all">Any source</option>
+						<option value="both">Google + IServ</option>
+						<option value="google">Google only</option>
+						<option value="iserv">IServ only</option>
+					</select>
+					<button id="reloadBtn" class="secondaryBtn" type="button" hidden>Reload Data</button>
+					<button id="clearBtn" type="button">Clear Filters</button>
+				</div>
+			</div>
+
+			<p class="stats" id="stats">Loading contacts...</p>
+			<div id="errorBox" class="error"></div>
+			<div id="results" class="results"></div>
+		</section>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script>
+		const SUPABASE_URL = "https://zkdfkzuhrstdtelllwot.supabase.co";
+		const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_QzQ-jNJNhpbxU5mvuwPhUA_XEHdXhsx";
+		const SUPABASE_TABLE = "maindata";
+		const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='64' fill='%23e6f3dc'/%3E%3Ccircle cx='64' cy='50' r='24' fill='%2390b57a'/%3E%3Cpath d='M24 110c4-22 20-36 40-36s36 14 40 36' fill='%2390b57a'/%3E%3C/svg%3E";
+
+		const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+		const qInput = document.getElementById("q");
+		const typeFilter = document.getElementById("typeFilter");
+		const classFilter = document.getElementById("classFilter");
+		const sourceFilter = document.getElementById("sourceFilter");
+		const reloadBtn = document.getElementById("reloadBtn");
+		const clearBtn = document.getElementById("clearBtn");
+		const statsEl = document.getElementById("stats");
+		const resultsEl = document.getElementById("results");
+		const errorBox = document.getElementById("errorBox");
+		const titleRow = document.querySelector("h1");
+		titleRow.insertAdjacentHTML("beforeend", '<button id="settingsBtn" class="titleIcon" type="button" aria-label="Open settings">⚙</button>');
+		const settingsBtn = document.getElementById("settingsBtn");
+
+		const settingsMenu = document.createElement("div");
+		settingsMenu.className = "settingsMenu";
+		settingsMenu.innerHTML = `
+			<strong>Account</strong>
+			<div id="authStatus" class="meta">Checking session...</div>
+			<div class="lockRow">
+				<input id="emailInput" class="keyInput" type="email" placeholder="Email">
+				<input id="passwordInput" class="keyInput" type="password" placeholder="Password">
+			</div>
+			<div class="lockRow">
+				<button id="signInBtn" type="button">Sign In</button>
+				<button id="signUpBtn" class="secondaryBtn" type="button">Sign Up</button>
+				<button id="signOutBtn" class="secondaryBtn" type="button">Sign Out</button>
+			</div>
+			<div id="otpRow" class="lockRow" style="display:none;">
+				<input id="otpInput" class="keyInput" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter 6-digit OTP code">
+				<button id="verifyOtpBtn" class="secondaryBtn" type="button">Verify OTP</button>
+			</div>
+		`;
+		document.querySelector(".hero").insertBefore(settingsMenu, errorBox);
+
+		const authStatus = document.getElementById("authStatus");
+		const emailInput = document.getElementById("emailInput");
+		const passwordInput = document.getElementById("passwordInput");
+		const signInBtn = document.getElementById("signInBtn");
+		const signUpBtn = document.getElementById("signUpBtn");
+		const signOutBtn = document.getElementById("signOutBtn");
+		const otpRow = document.getElementById("otpRow");
+		const otpInput = document.getElementById("otpInput");
+		const verifyOtpBtn = document.getElementById("verifyOtpBtn");
+
+		let currentSession = null;
+		let pendingSignupEmail = "";
+
+		let allProfiles = [];
+		let visibleCount = 300;
+		let settingsVisible = false;
+		const DIRECTORY_SCROLL_KEY = "jfks_directory_scroll_y";
+
+		const DIRECTORY_CACHE_KEY = "jfks_maindata_cache_v1";
+		const DIRECTORY_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+		if ("scrollRestoration" in history) {
+			history.scrollRestoration = "manual";
+		}
+
+		function makeHiResGoogleUrl(url, size) {
+			const raw = String(url || "").trim();
+			if (!raw || !/googleusercontent\.com/i.test(raw)) {
+				return raw;
+			}
+			return raw.replace(/=s\d+(-p-k-rw-no-mo|-p-k-rw-no|-p|)?/i, `=s${size}$1`).replace(/=s\d+$/i, `=s${size}`);
+		}
+
+		function extractEmails(raw) {
+			const emails = [];
+			if (Array.isArray(raw.Email)) {
+				for (const email of raw.Email) {
+					if (email) emails.push(String(email).toLowerCase());
+				}
+			}
+			return [...new Set(emails)];
+		}
+
+		function parseAvatarFromHtml(avatarHtml) {
+			if (!avatarHtml || typeof avatarHtml !== "string") {
+				return "";
+			}
+			const sourceSrcset = avatarHtml.match(/<source[^>]*srcset=\"([^\"]+)\"/i);
+			if (sourceSrcset && sourceSrcset[1]) {
+				const candidates = sourceSrcset[1]
+					.split(",")
+					.map((entry) => entry.trim().split(" "))
+					.map(([url, descriptor]) => ({ url, size: parseInt((descriptor || "").replace(/[^0-9]/g, ""), 10) || 0 }))
+					.filter((item) => item.url);
+				if (candidates.length) {
+					candidates.sort((a, b) => b.size - a.size);
+					return candidates[0].url;
+				}
+			}
+			const srcMatch = avatarHtml.match(/<img[^>]*src=\"([^\"]+)\"/i);
+			return srcMatch ? srcMatch[1] : "";
+		}
+
+		function parseIservAvatar(value) {
+			const raw = String(value || "").trim();
+			if (!raw) return "";
+			if (raw.startsWith("<")) {
+				return parseAvatarFromHtml(raw);
+			}
+			return raw;
+		}
+
+		function normalizeProfile(raw) {
+			if (!raw || typeof raw !== "object") {
+				return null;
+			}
+
+			const name = (raw.Name || "").trim();
+			if (!name) {
+				return null;
+			}
+
+			const iservAvatar = parseIservAvatar(raw.IservPP);
+			const googleAvatar = makeHiResGoogleUrl(raw.GooglePP || "", 128);
+			const extra = String(raw.Type || "").trim();
+			const emails = extractEmails(raw);
+			const email = emails[0] || "";
+			const fullName = name;
+
+			const role = raw.Type === "Student" || raw.Type === "Teacher" ? raw.Type : "Other";
+			const className = String(raw.Class || "").trim();
+
+			return {
+				id: name.toLowerCase(),
+				name,
+				fullName,
+				email,
+				role,
+				className,
+				extra,
+				google: Boolean(raw.Google),
+				iserv: Boolean(raw.Iserv),
+				avatar: googleAvatar || iservAvatar || DEFAULT_AVATAR,
+				googleAvatar: googleAvatar || DEFAULT_AVATAR,
+				iservAvatar: iservAvatar || "",
+				emails,
+				raw
+			};
+		}
+
+		function normalizeSearchText(value) {
+			return String(value || "")
+				.toLowerCase()
+				.normalize("NFKD")
+				.replace(/[\u0300-\u036f]/g, "")
+				.trim();
+		}
+
+		function tokenizeSearchText(value) {
+			return normalizeSearchText(value)
+				.split(/[^a-z0-9]+/i)
+				.filter(Boolean);
+		}
+
+		function subsequenceMatchScore(query, candidate) {
+			if (!query || !candidate) return null;
+			if (candidate === query) return 0;
+
+			let queryIndex = 0;
+			let firstMatch = -1;
+			let lastMatch = -1;
+
+			for (let i = 0; i < candidate.length && queryIndex < query.length; i++) {
+				if (candidate[i] === query[queryIndex]) {
+					if (firstMatch === -1) firstMatch = i;
+					lastMatch = i;
+					queryIndex += 1;
+				}
+			}
+
+			if (queryIndex !== query.length) {
+				return null;
+			}
+
+			const span = lastMatch - firstMatch + 1;
+			const gaps = Math.max(0, span - query.length);
+			const prefixPenalty = firstMatch;
+			const lengthPenalty = Math.max(0, candidate.length - query.length) * 0.15;
+			return 60 + prefixPenalty * 4 + gaps * 3 + lengthPenalty;
+		}
+
+		function profileSearchScore(profile, query) {
+			const normalizedQuery = normalizeSearchText(query);
+			if (!normalizedQuery) return 0;
+
+			const searchFields = [
+				profile.fullName,
+				profile.name,
+				profile.email,
+				...(profile.emails || []),
+				profile.className,
+				profile.role,
+				profile.extra
+			].map(normalizeSearchText).filter(Boolean);
+
+			let bestScore = Number.POSITIVE_INFINITY;
+
+			for (const field of searchFields) {
+				if (field === normalizedQuery) {
+					bestScore = Math.min(bestScore, 0);
+					continue;
+				}
+
+				if (field.startsWith(normalizedQuery)) {
+					bestScore = Math.min(bestScore, 5 + Math.max(0, field.length - normalizedQuery.length) * 0.05);
+				}
+
+				const includesAt = field.indexOf(normalizedQuery);
+				if (includesAt !== -1) {
+					bestScore = Math.min(bestScore, 20 + includesAt * 0.5);
+				}
+
+				const fieldTokens = tokenizeSearchText(field);
+				for (const token of fieldTokens) {
+					if (token === normalizedQuery) {
+						bestScore = Math.min(bestScore, 0);
+						continue;
+					}
+					if (token.startsWith(normalizedQuery)) {
+						bestScore = Math.min(bestScore, 4 + Math.max(0, token.length - normalizedQuery.length) * 0.05);
+					}
+					const subseqScore = subsequenceMatchScore(normalizedQuery, token);
+					if (subseqScore !== null) {
+						bestScore = Math.min(bestScore, subseqScore);
+					}
+				}
+			}
+
+			if (!Number.isFinite(bestScore)) {
+				return Number.POSITIVE_INFINITY;
+			}
+
+			return bestScore;
+		}
+
+		function rankProfile(profile, query) {
+			const score = profileSearchScore(profile, query);
+			return Number.isFinite(score) ? score : Number.POSITIVE_INFINITY;
+		}
+
+		function readUrlState() {
+			const params = new URLSearchParams(window.location.search);
+			return {
+				q: params.get("q") || "",
+				type: params.get("type") || "all",
+				className: params.get("class") || "",
+				source: params.get("source") || "all",
+				profile: params.get("profile") || ""
+			};
+		}
+
+		function writeUrlState() {
+			const params = new URLSearchParams();
+			if (qInput.value.trim()) params.set("q", qInput.value.trim());
+			if (typeFilter.value !== "all") params.set("type", typeFilter.value);
+			if (classFilter.value.trim()) params.set("class", classFilter.value.trim());
+			if (sourceFilter.value !== "all") params.set("source", sourceFilter.value);
+			const next = `${window.location.pathname}?${params.toString()}`;
+			window.history.replaceState({}, "", next);
+		}
+
+		function applyUrlState() {
+			const state = readUrlState();
+			qInput.value = state.q;
+			typeFilter.value = ["all", "student", "teacher", "other"].includes(state.type) ? state.type : "all";
+			classFilter.value = state.className;
+			sourceFilter.value = ["all", "google", "iserv", "both"].includes(state.source) ? state.source : "all";
+			if (state.profile) {
+				const params = new URLSearchParams(window.location.search);
+				window.location.href = `contacts.html?${params.toString()}`;
+			}
+		}
+
+		function profileMatches(profile) {
+			const q = qInput.value.trim();
+			const type = typeFilter.value;
+			const cls = classFilter.value.trim().toLowerCase();
+			const source = sourceFilter.value;
+			if (q && !Number.isFinite(profileSearchScore(profile, q))) return false;
+			if (type === "student" && profile.role !== "Student") return false;
+			if (type === "teacher" && profile.role !== "Teacher") return false;
+			if (type === "other" && ["Student", "Teacher"].includes(profile.role)) return false;
+			if (cls && !profile.className.toLowerCase().includes(cls) && !profile.extra.toLowerCase().includes(cls)) return false;
+			if (source === "google" && !(profile.google && !profile.iserv)) return false;
+			if (source === "iserv" && !(profile.iserv && !profile.google)) return false;
+			if (source === "both" && !(profile.google && profile.iserv)) return false;
+			return true;
+		}
+
+		function renderResults() {
+			const query = qInput.value.trim();
+			const filtered = allProfiles
+				.filter(profileMatches)
+				.sort((a, b) => rankProfile(a, query) - rankProfile(b, query) || a.fullName.localeCompare(b.fullName));
+			statsEl.textContent = `Showing ${filtered.length} of ${allProfiles.length} profiles`;
+			resultsEl.innerHTML = "";
+
+			if (filtered.length === 0) {
+				resultsEl.innerHTML = "<p>No matches found. Try a broader query.</p>";
+				return;
+			}
+
+			const stateParams = new URLSearchParams(window.location.search);
+
+			filtered.slice(0, visibleCount).forEach((profile) => {
+				const a = document.createElement("a");
+				a.className = "card";
+
+				const linkParams = new URLSearchParams(stateParams);
+				linkParams.set("profile", profile.name);
+				a.href = `contacts.html?${linkParams.toString()}`;
+				a.addEventListener("click", (event) => {
+					event.preventDefault();
+					saveScrollPosition();
+					window.location.href = a.href;
+				});
+
+				const isStudent = profile.role === "Student";
+				const metaParts = [];
+				if (isStudent && profile.className) metaParts.push(profile.className);
+				metaParts.push(profile.role);
+
+				const avatar = document.createElement("img");
+				avatar.className = "avatar";
+				avatar.src = profile.googleAvatar || profile.avatar;
+				avatar.alt = profile.fullName;
+				avatar.loading = "lazy";
+				avatar.referrerPolicy = "no-referrer";
+				avatar.addEventListener("error", () => {
+					if (avatar.src !== profile.iservAvatar && profile.iservAvatar) {
+						avatar.src = profile.iservAvatar;
+					} else {
+						avatar.src = DEFAULT_AVATAR;
+					}
+				});
+
+				const content = document.createElement("div");
+				const nameP = document.createElement("p");
+				nameP.className = "name";
+				nameP.textContent = profile.fullName;
+				const metaP = document.createElement("p");
+				metaP.className = "meta";
+				metaP.textContent = `${metaParts.join(" • ") || "Other"}${profile.extra && !isStudent ? ` • ${profile.extra}` : ""}`;
+				content.appendChild(nameP);
+				content.appendChild(metaP);
+
+				a.appendChild(avatar);
+				a.appendChild(content);
+
+				resultsEl.appendChild(a);
+			});
+
+			if (filtered.length > visibleCount) {
+				const moreBtn = document.createElement("button");
+				moreBtn.type = "button";
+				moreBtn.className = "secondaryBtn";
+				moreBtn.textContent = `Load More (${Math.min(100, filtered.length - visibleCount)} more)`;
+				moreBtn.addEventListener("click", () => {
+					visibleCount += 100;
+					renderResults();
+				});
+				resultsEl.appendChild(moreBtn);
+			}
+		}
+
+		function saveScrollPosition() {
+			sessionStorage.setItem(DIRECTORY_SCROLL_KEY, String(window.scrollY || 0));
+		}
+
+		function restoreScrollPosition() {
+			const stored = sessionStorage.getItem(DIRECTORY_SCROLL_KEY);
+			if (stored === null) return;
+			const scrollY = parseInt(stored, 10);
+			if (Number.isNaN(scrollY)) {
+				sessionStorage.removeItem(DIRECTORY_SCROLL_KEY);
+				return;
+			}
+			requestAnimationFrame(() => {
+				window.scrollTo({ top: scrollY, behavior: "auto" });
+				sessionStorage.removeItem(DIRECTORY_SCROLL_KEY);
+			});
+		}
+
+		function readCachedRows() {
+			try {
+				const raw = localStorage.getItem(DIRECTORY_CACHE_KEY);
+				if (!raw) return null;
+				const parsed = JSON.parse(raw);
+				if (!parsed || !Array.isArray(parsed.rows) || typeof parsed.fetchedAt !== "number") return null;
+				if (Date.now() - parsed.fetchedAt > DIRECTORY_CACHE_TTL_MS) return null;
+				return parsed.rows;
+			} catch (_error) {
+				return null;
+			}
+		}
+
+		function writeCachedRows(rows) {
+			try {
+				localStorage.setItem(DIRECTORY_CACHE_KEY, JSON.stringify({ fetchedAt: Date.now(), rows }));
+			} catch (_error) {
+				// Ignore storage failures.
+			}
+		}
+
+		async function fetchAllRows(forceRefresh = false) {
+			if (!forceRefresh) {
+				const cached = readCachedRows();
+				if (cached) return cached;
+			}
+
+			const pageSize = 1000;
+			let offset = 0;
+			const rows = [];
+
+			while (true) {
+				const { data, error } = await supabaseClient
+					.from(SUPABASE_TABLE)
+					.select("*")
+					.order("Name", { ascending: true })
+					.range(offset, offset + pageSize - 1);
+
+				if (error) throw error;
+				rows.push(...(data || []));
+				if (!data || data.length < pageSize) break;
+				offset += pageSize;
+			}
+			writeCachedRows(rows);
+
+			return rows;
+		}
+
+		async function loadData(forceRefresh = false) {
+			try {
+				errorBox.style.display = "none";
+				if (!currentSession) {
+					throw new Error("Please sign in first. Only authenticated users can read data.");
+				}
+				const rawRows = await fetchAllRows(forceRefresh);
+				allProfiles = rawRows.map(normalizeProfile).filter(Boolean);
+				visibleCount = 300;
+				renderResults();
+				restoreScrollPosition();
+				statsEl.textContent = `Showing ${allProfiles.length} of ${allProfiles.length} profiles`;
+			} catch (error) {
+				statsEl.textContent = "Could not load contacts.";
+				errorBox.textContent = error.message || "Failed to load data from Supabase.";
+				errorBox.style.display = "block";
+				settingsBtn.style.display = "inline-flex";
+				settingsMenu.classList.add("open");
+				settingsVisible = true;
+				resultsEl.innerHTML = "";
+			}
+		}
+
+		function isAdminUser(session) {
+			if (!session || !session.user || !session.user.email) return false;
+			return session.user.email.endsWith("@fynn.qzz.io");
+		}
+
+		function setAuthUi(session) {
+			if (session && session.user) {
+				authStatus.textContent = `Signed in as ${session.user.email}`;
+				reloadBtn.hidden = !isAdminUser(session);
+			} else {
+				authStatus.textContent = "Not signed in.";
+				reloadBtn.hidden = true;
+			}
+		}
+
+		async function signIn() {
+			try {
+				const { error } = await supabaseClient.auth.signInWithPassword({
+					email: emailInput.value.trim(),
+					password: passwordInput.value
+				});
+				if (error) throw error;
+				await loadData();
+			} catch (error) {
+				errorBox.textContent = error.message || "Sign in failed.";
+				errorBox.style.display = "block";
+			}
+		}
+
+		async function signUp() {
+			try {
+				const email = emailInput.value.trim();
+				if (!email || !passwordInput.value) {
+					throw new Error("Enter email and password first.");
+				}
+				const { error } = await supabaseClient.auth.signUp({
+					email,
+					password: passwordInput.value
+				});
+				if (error) throw error;
+				pendingSignupEmail = email;
+				otpRow.style.display = "flex";
+				errorBox.textContent = "Signup created. Enter the OTP code from your email to confirm.";
+				errorBox.style.display = "block";
+			} catch (error) {
+				errorBox.textContent = error.message || "Sign up failed.";
+				errorBox.style.display = "block";
+			}
+		}
+
+		async function verifySignupOtp() {
+			try {
+				const email = pendingSignupEmail || emailInput.value.trim();
+				const token = otpInput.value.trim();
+				if (!email) throw new Error("Missing signup email.");
+				if (!token) throw new Error("Enter OTP code.");
+
+				const { data, error } = await supabaseClient.auth.verifyOtp({
+					email,
+					token,
+					type: "signup"
+				});
+				if (error) throw error;
+
+				if (!data.session) {
+					const signInResult = await supabaseClient.auth.signInWithPassword({
+						email,
+						password: passwordInput.value
+					});
+					if (signInResult.error) throw signInResult.error;
+				}
+
+				otpInput.value = "";
+				otpRow.style.display = "none";
+				pendingSignupEmail = "";
+				errorBox.style.display = "none";
+				await loadData();
+			} catch (error) {
+				errorBox.textContent = error.message || "OTP verification failed.";
+				errorBox.style.display = "block";
+			}
+		}
+
+		async function signOut() {
+			try {
+				await supabaseClient.auth.signOut();
+				currentSession = null;
+				setAuthUi(null);
+				pendingSignupEmail = "";
+				otpInput.value = "";
+				otpRow.style.display = "none";
+				allProfiles = [];
+				resultsEl.innerHTML = "";
+				statsEl.textContent = "Signed out.";
+				settingsMenu.classList.add("open");
+				settingsVisible = true;
+			} catch (error) {
+				errorBox.textContent = error.message || "Sign out failed.";
+				errorBox.style.display = "block";
+			}
+		}
+
+		function bindEvents() {
+			[qInput, typeFilter, classFilter, sourceFilter].forEach((el) => {
+				el.addEventListener("input", () => {
+					visibleCount = 300;
+					writeUrlState();
+					renderResults();
+				});
+				el.addEventListener("change", () => {
+					visibleCount = 300;
+					writeUrlState();
+					renderResults();
+				});
+			});
+
+			clearBtn.addEventListener("click", () => {
+				qInput.value = "";
+				typeFilter.value = "all";
+				classFilter.value = "";
+				sourceFilter.value = "all";
+				visibleCount = 300;
+				writeUrlState();
+				renderResults();
+			});
+
+			reloadBtn.addEventListener("click", async () => {
+				await loadData(true);
+			});
+
+			settingsBtn.addEventListener("click", () => {
+				settingsVisible = !settingsVisible;
+				settingsMenu.classList.toggle("open", settingsVisible);
+			});
+
+			signInBtn.addEventListener("click", signIn);
+			signUpBtn.addEventListener("click", signUp);
+			verifyOtpBtn.addEventListener("click", verifySignupOtp);
+			signOutBtn.addEventListener("click", signOut);
+		}
+
+		applyUrlState();
+		bindEvents();
+
+		supabaseClient.auth.onAuthStateChange((_event, session) => {
+			currentSession = session;
+			setAuthUi(session);
+		});
+
+		(async () => {
+			const { data } = await supabaseClient.auth.getSession();
+			currentSession = data.session;
+			setAuthUi(currentSession);
+			if (currentSession) {
+				settingsMenu.classList.remove("open");
+				settingsVisible = false;
+			}
+			loadData();
+		})();
+	</script>
+</body>
+</html>
