@@ -769,16 +769,33 @@
       history.replaceState(null, "", clean);
     }
 
-    async function decryptAESCBC(encryptedBytes, keyString) {
+     // ── AES-256-GCM Yearbook Key helpers ────────────────────────────────────────
+
+    async function decryptAESGCM(encryptedBytes, keyString) {
       const keyBytes = new TextEncoder().encode(keyString.trim());
+      
+      // Import raw key data into a CryptoKey usable by AES-GCM
       const cryptoKey = await crypto.subtle.importKey(
-        "raw", keyBytes, { name: "AES-CBC" }, false, ["decrypt"]
+        "raw", keyBytes, { name: "AES-GCM" }, false, ["decrypt"]
       );
-      const iv         = encryptedBytes.slice(0, 16);
-      const ciphertext = encryptedBytes.slice(16);
+      
+      // Extract the 12-byte Nonce and 16-byte Auth Tag from the payload front
+      const nonce      = encryptedBytes.slice(0, 12);
+      const tag        = encryptedBytes.slice(12, 28);
+      const ciphertext = encryptedBytes.slice(28);
+      
+      // Re-stitch ciphertext and authentication tag back together for Web Crypto API
+      const combinedPayload = new Uint8Array(ciphertext.length + tag.length);
+      combinedPayload.set(ciphertext);
+      combinedPayload.set(tag, ciphertext.length);
+
+      // Decrypt data. SubtleCrypto validates the tag automatically.
       const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-CBC", iv }, cryptoKey, ciphertext
+        { name: "AES-GCM", iv: nonce, tagLength: 128 }, 
+        cryptoKey, 
+        combinedPayload
       );
+      
       return new Uint8Array(decrypted);
     }
 
@@ -786,19 +803,29 @@
       const key = getYBKey();
       if (!key) return null;
       try {
+        // Fetch the secure file (e.g. without appending extension if stripped on server)
         const res = await fetch(baseUrl + ".enc");
         if (!res.ok) return null;
+        
         const raw       = new Uint8Array(await res.arrayBuffer());
-        const decrypted = await decryptAESCBC(raw, key);
+        const decrypted = await decryptAESGCM(raw, key);
 
+        // Analyze file signatures to assign a matching mime type
         let mime = "image/png";
         if (decrypted[0] === 0xFF && decrypted[1] === 0xD8) mime = "image/jpeg";
         else if (decrypted[0] === 0x47 && decrypted[1] === 0x49) mime = "image/gif";
         else if (decrypted[0] === 0x52 && decrypted[1] === 0x49) mime = "image/webp";
 
-        return URL.createObjectURL(new Blob([decrypted], { type: mime }));
+        // Clean up memory leaks from any older rendered images first
+        if (yearbookBlobUrl) {
+          URL.revokeObjectURL(yearbookBlobUrl);
+        }
+
+        // Generate the secure blob asset URL
+        yearbookBlobUrl = URL.createObjectURL(new Blob([decrypted], { type: mime }));
+        return yearbookBlobUrl;
       } catch (err) {
-        console.warn("Yearbook decryption failed:", err);
+        console.warn("Yearbook decryption or authentication failed:", err);
         return null;
       }
     }
