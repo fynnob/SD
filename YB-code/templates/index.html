@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam OCR Scanner</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 20px; }
+        video { border: 2px solid #333; border-radius: 8px; max-width: 100%; height: auto; background-color: #000; }
+        .controls, .advanced-controls, .group-input { margin-top: 15px; }
+        button, input[type="text"] { padding: 10px; font-size: 16px; margin: 5px; }
+        button { cursor: pointer; padding: 10px 20px; }
+        input[type="range"] { vertical-align: middle; }
+        #result { margin-top: 20px; color: blue; }
+        #torchContainer, #zoomContainer { display: none; margin: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>Scan Name</h2>
+    
+    <video id="video" autoplay playsinline></video>
+    
+    <div class="group-input">
+        <label for="groupName"><strong>Group: </strong></label>
+        <input type="text" id="groupName" placeholder="e.g. 1A" required>
+    </div>
+
+    <div class="controls">
+        <button id="switchCam">Switch Camera</button>
+        <button id="snap">Take Photo & Save</button>
+    </div>
+
+    <div class="advanced-controls">
+        <span id="torchContainer">
+            <button id="torchBtn">Turn Flashlight ON</button>
+        </span>
+        <span id="zoomContainer">
+            <label for="zoomSlider">Zoom: </label>
+            <input type="range" id="zoomSlider" min="1" max="1" step="0.1" value="1">
+        </span>
+    </div>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+    <h3 id="result">Waiting for photo...</h3>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const snapBtn = document.getElementById('snap');
+        const switchCamBtn = document.getElementById('switchCam');
+        const resultText = document.getElementById('result');
+        const groupInput = document.getElementById('groupName');
+        
+        const torchBtn = document.getElementById('torchBtn');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const torchContainer = document.getElementById('torchContainer');
+        const zoomContainer = document.getElementById('zoomContainer');
+
+        let currentStream = null;
+        let videoTrack = null;
+        let facingMode = 'environment'; 
+        let torchOn = false;
+
+        function startCamera(mode) {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            torchContainer.style.display = 'none';
+            zoomContainer.style.display = 'none';
+            torchOn = false;
+            torchBtn.innerText = "Turn Flashlight ON";
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } })
+                .then(stream => {
+                    currentStream = stream;
+                    video.srcObject = stream;
+                    videoTrack = stream.getVideoTracks()[0];
+                    setTimeout(checkCapabilities, 500);
+                })
+                .catch(err => {
+                    console.error("Camera error: ", err);
+                    resultText.innerText = "Camera access denied.";
+                });
+        }
+
+        function checkCapabilities() {
+            if (!videoTrack) return;
+            const capabilities = videoTrack.getCapabilities();
+
+            if (capabilities.torch) {
+                torchContainer.style.display = 'inline-block';
+            }
+            if (capabilities.zoom) {
+                zoomContainer.style.display = 'inline-block';
+                zoomSlider.min = capabilities.zoom.min;
+                zoomSlider.max = capabilities.zoom.max;
+                zoomSlider.step = capabilities.zoom.step;
+                zoomSlider.value = videoTrack.getSettings().zoom || 1;
+            }
+        }
+
+        startCamera(facingMode);
+
+        switchCamBtn.addEventListener('click', () => {
+            facingMode = (facingMode === 'environment') ? 'user' : 'environment';
+            startCamera(facingMode);
+        });
+
+        torchBtn.addEventListener('click', async () => {
+            if (!videoTrack) return;
+            try {
+                torchOn = !torchOn;
+                await videoTrack.applyConstraints({ advanced: [{ torch: torchOn }] });
+                torchBtn.innerText = torchOn ? "Turn Flashlight OFF" : "Turn Flashlight ON";
+            } catch (err) {
+                console.error("Torch error:", err);
+            }
+        });
+
+        zoomSlider.addEventListener('input', async (e) => {
+            if (!videoTrack) return;
+            try {
+                await videoTrack.applyConstraints({ advanced: [{ zoom: e.target.value }] });
+            } catch (err) {
+                console.error("Zoom error:", err);
+            }
+        });
+
+        snapBtn.addEventListener('click', () => {
+            if (!currentStream) return;
+
+            // Enforce group name
+            const groupNameVal = groupInput.value.trim();
+            if (!groupNameVal) {
+                alert("Please enter a Group Name before taking a photo!");
+                groupInput.focus();
+                return;
+            }
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            resultText.innerText = "Processing & Saving...";
+
+            fetch('/process_photo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    image: canvas.toDataURL('image/png'),
+                    group_name: groupNameVal // Send the group name to Python
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    resultText.innerHTML = `Recognized Name: <strong>${data.recognized_name}</strong><br>Saved to: <em>${data.saved_path}</em>`;
+                } else {
+                    resultText.innerText = "Error: " + data.message;
+                }
+            })
+            .catch(() => resultText.innerText = "Server communication failed.");
+        });
+    </script>
+</body>
+</html>
